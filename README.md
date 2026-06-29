@@ -1,5 +1,7 @@
 # bpmn-clj (業務プロセス)
 
+[![CI](https://github.com/kotoba-lang/bpmn/actions/workflows/ci.yml/badge.svg)](https://github.com/kotoba-lang/bpmn/actions/workflows/ci.yml)
+
 Handle **BPMN 2.0 as EDN/Clojure data** in portable Clojure — every namespace is
 `.cljc`, with **zero third-party runtime deps**, so it runs on the JVM,
 ClojureScript, and Clojure-on-WASM hosts (SCI). A BPMN process is plain data you can
