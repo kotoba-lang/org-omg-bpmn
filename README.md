@@ -1,4 +1,4 @@
-# bpmn-clj (業務プロセス)
+# kotoba-lang/bpmn
 
 [![CI](https://github.com/kotoba-lang/bpmn/actions/workflows/ci.yml/badge.svg)](https://github.com/kotoba-lang/bpmn/actions/workflows/ci.yml)
 
@@ -8,17 +8,12 @@ ClojureScript, and Clojure-on-WASM hosts (SCI). A BPMN process is plain data you
 `assoc`, `diff`, store in Datomic, or generate; the library adds the graph queries,
 structural validation, XML I/O, and a pure token interpreter around it.
 
-Sibling of the other reusable `*-clj` kernels in this org
-([koe-clj](https://github.com/com-junkawasaki/koe-clj),
-[langgraph-clj](https://github.com/com-junkawasaki/langgraph-clj)).
+Sibling of other reusable kotoba-lang contract kernels.
 
-## Why a shared library (org placement)
+## Why a shared library
 
-Per the three-org rule, the **reusable** process model lives in **com-junkawasaki**;
-**public-benefit actor instances** that drive concrete processes live in
-**etzhayyim**; any **business/private deployment** lives in **gftdcojp**. bpmn-clj is
-the dep — it carries no domain process and no engine bindings (those are
-host-injected ports).
+The reusable process model lives in `kotoba-lang/bpmn`. It carries no domain
+process and no engine bindings; those remain host-injected ports.
 
 ## The model: BPMN as EDN (`bpmn.model`)
 
@@ -113,5 +108,5 @@ interpreter stays pure orchestration.
 ## Test
 
 ```
-clojure -X:test
+clojure -M:test
 ```
