@@ -56,6 +56,15 @@
                    (some #(nil? (:bpmn/condition %)) outs))
           (conj! ps (problem :warn :gateway/indeterminate (:bpmn/id g)
                              "exclusive gateway has an unconditioned branch and no default")))))
+    ;; inclusive gateway with no default and every outgoing flow conditioned risks
+    ;; taking zero flows at runtime if all conditions evaluate false
+    (doseq [g (m/nodes-of-type model :inclusive-gateway)]
+      (let [outs (m/outgoing model (:bpmn/id g))]
+        (when (and (seq outs)
+                   (not (:bpmn/default g))
+                   (every? :bpmn/condition outs))
+          (conj! ps (problem :warn :gateway/indeterminate (:bpmn/id g)
+                             "inclusive gateway has no default and every outgoing flow is conditioned")))))
     (persistent! ps)))
 
 (defn errors [model] (filterv #(= :error (:bpmn/severity %)) (problems model)))

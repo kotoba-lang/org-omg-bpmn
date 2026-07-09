@@ -36,3 +36,23 @@
               (m/connect "G" "B" {:id "Fb"}))    ; no condition, no default
         codes (set (map :bpmn/code (v/problems p)))]
     (is (contains? codes :gateway/indeterminate))))
+
+(deftest indeterminate-inclusive-gateway-warns
+  (let [p (-> (m/process "P")
+              (m/add :start-event "S") (m/add :inclusive-gateway "G")
+              (m/add :end-event "A") (m/add :end-event "B")
+              (m/connect "S" "G")
+              (m/connect "G" "A" {:id "Fa" :condition "${x}"})
+              (m/connect "G" "B" {:id "Fb" :condition "${y}"}))    ; every flow conditioned, no default
+        codes (set (map :bpmn/code (v/problems p)))]
+    (is (contains? codes :gateway/indeterminate))))
+
+(deftest inclusive-gateway-with-default-does-not-warn
+  (let [p (-> (m/process "P")
+              (m/add :start-event "S") (m/add :inclusive-gateway "G" {:default "Fb"})
+              (m/add :end-event "A") (m/add :end-event "B")
+              (m/connect "S" "G")
+              (m/connect "G" "A" {:id "Fa" :condition "${x}"})
+              (m/connect "G" "B" {:id "Fb"}))
+        codes (set (map :bpmn/code (v/problems p)))]
+    (is (not (contains? codes :gateway/indeterminate)))))
