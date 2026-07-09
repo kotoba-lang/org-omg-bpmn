@@ -91,6 +91,45 @@
     (is (e/completed? end))
     (is (seq (filter #(= :end (:bpmn/event %)) (:bpmn/trace end))))))
 
+;; --- event-based gateway: exactly one competing branch proceeds, never a fan-out ---
+
+(deftest event-based-gateway-takes-exactly-one-branch
+  (let [model (-> (m/process "Race")
+                  (m/add :start-event "S")
+                  (m/add :event-based-gateway "EBG")
+                  (m/add :intermediate-catch-event "MSG")
+                  (m/add :intermediate-catch-event "TMR")
+                  (m/add :end-event "EndA") (m/add :end-event "EndB")
+                  (m/connect "S" "EBG")
+                  (m/connect "EBG" "MSG" {:id "F2"})
+                  (m/connect "EBG" "TMR" {:id "F3"})
+                  (m/connect "MSG" "EndA" {:id "F4"})
+                  (m/connect "TMR" "EndB" {:id "F5"}))
+        end (e/run (e/default-ports) model)]
+    (is (e/completed? end))
+    (is (= 1 (count (filter #(= :end (:bpmn/event %)) (:bpmn/trace end)))))))
+
+;; --- complex gateway: same truthy-condition/default/never-drop semantics as inclusive ---
+
+(defn complex-model []
+  (-> (m/process "Cx")
+      (m/add :start-event "S")
+      (m/add :complex-gateway "CG")
+      (m/add :end-event "Ea") (m/add :end-event "Eb")
+      (m/connect "S" "CG")
+      (m/connect "CG" "Ea" {:id "Fa" :condition "${a}"})
+      (m/connect "CG" "Eb" {:id "Fb" :condition "${b}"})))
+
+(deftest complex-gateway-routes-on-truthy-condition
+  (let [end (e/run (e/default-ports) (complex-model) (e/start (complex-model) {:a true}))]
+    (is (= ["Ea"] (mapv :bpmn/at (filter #(= :end (:bpmn/event %)) (:bpmn/trace end)))))))
+
+(deftest complex-gateway-never-annihilates-the-token
+  (let [model (complex-model)
+        end   (e/run (e/default-ports) model (e/start model {}))]
+    (is (e/completed? end))
+    (is (seq (filter #(= :end (:bpmn/event %)) (:bpmn/trace end))))))
+
 ;; --- runaway guard ---
 
 (deftest step-limit-guards-loops

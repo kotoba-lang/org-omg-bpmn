@@ -8,13 +8,23 @@
   in one global `:bpmn/vars` map, mutated only by `IActivity/perform`.
 
   Gateway semantics:
-    exclusive  — first outgoing whose condition is truthy, else the `:bpmn/default`
-                 flow, else the first unconditioned flow (XOR-join just passes each
-                 token through its single outgoing).
-    parallel   — AND-join + AND-split: wait until a token has arrived on *every*
-                 incoming flow, then emit one on *every* outgoing.
-    inclusive  — OR-split: emit on every outgoing whose condition is truthy (or the
-                 default if none). NOTE: OR-*join* is treated as pass-through.
+    exclusive    — first outgoing whose condition is truthy, else the `:bpmn/default`
+                   flow, else the first unconditioned flow (XOR-join just passes each
+                   token through its single outgoing).
+    parallel     — AND-join + AND-split: wait until a token has arrived on *every*
+                   incoming flow, then emit one on *every* outgoing.
+    inclusive    — OR-split: emit on every outgoing whose condition is truthy (or
+                   every outgoing if none are, so a token is never silently lost).
+                   NOTE: OR-*join* is treated as pass-through.
+    event-based  — exactly one outgoing flow is taken, never a fan-out (per spec, an
+                   event-based gateway's competing outgoing branches are mutually
+                   exclusive — the first to trigger wins and the rest are discarded).
+                   This interpreter has no event-triggering/racing model, so it
+                   deterministically takes the first outgoing flow; this at least
+                   preserves the single-token cardinality the spec requires.
+    complex      — same condition-evaluation as inclusive (truthy conditions, else
+                   default, else every outgoing), since no dedicated activation-
+                   condition data is modeled for this gateway type.
   A non-gateway node performs its activity then fans a token onto each outgoing flow
   (0 → the token ends, 1 → moves, >1 → uncontrolled parallel split). An end event
   performs then consumes its token."
@@ -37,6 +47,19 @@
   (and (:bpmn/done? state) (empty? (:bpmn/tokens state))))
 
 (defn- emit [outs] (mapv (fn [f] {:bpmn/at (:bpmn/target f) :bpmn/via (:bpmn/id f)}) outs))
+
+(defn- inclusive-taken
+  "Flows an OR-style gateway (:inclusive-gateway/:complex-gateway) takes: every
+  outgoing whose condition is truthy, else the :bpmn/default flow, else every
+  outgoing (never silently drop the token)."
+  [ports model node outs vars]
+  (let [taken (filter #(or (nil? (:bpmn/condition %))
+                           (p/truthy? (:condition ports) (:bpmn/condition %) vars))
+                      outs)]
+    (cond
+      (seq taken)           taken
+      (:bpmn/default node)  (some->> (:bpmn/default node) (m/flow model) vector)
+      :else                 outs)))
 
 (defn advance
   "Advance exactly one token by one node. Returns the next state."
@@ -85,23 +108,23 @@
                 (log {:bpmn/event :exclusive :bpmn/flow (:bpmn/id chosen)})))
 
           (= t :inclusive-gateway)
-          (let [taken (filter #(or (nil? (:bpmn/condition %))
-                                   (p/truthy? (:condition ports) (:bpmn/condition %) vars))
-                              outs)
-                taken (cond
-                        (seq taken) taken
-                        (:bpmn/default node) (some->> (:bpmn/default node) (m/flow model) vector)
-                        ;; No condition was truthy and there's no default flow --
-                        ;; falling through to an empty `taken` here would silently
-                        ;; annihilate the token (no error, no end event, and `run`
-                        ;; would report the process as completed?). Fall back to
-                        ;; every outgoing flow rather than dropping the token, the
-                        ;; same never-lose-a-token guarantee exclusive-gateway's
-                        ;; own final fallback provides.
-                        :else outs)]
-            (-> state
-                (assoc :bpmn/tokens (into others (emit taken)))
-                (log {:bpmn/event :inclusive})))
+          (-> state
+              (assoc :bpmn/tokens (into others (emit (inclusive-taken ports model node outs vars))))
+              (log {:bpmn/event :inclusive}))
+
+          (= t :complex-gateway)
+          (-> state
+              (assoc :bpmn/tokens (into others (emit (inclusive-taken ports model node outs vars))))
+              (log {:bpmn/event :complex}))
+
+          (= t :event-based-gateway)
+          ;; Exactly one outgoing flow, never a fan-out -- see the namespace
+          ;; docstring's "event-based" note. Falling through to the generic
+          ;; :else clause here would emit(outs) onto EVERY competing branch,
+          ;; duplicating the token across mutually-exclusive paths.
+          (-> state
+              (assoc :bpmn/tokens (into others (emit (when (seq outs) [(first outs)]))))
+              (log {:bpmn/event :event-based :bpmn/flow (:bpmn/id (first outs))}))
 
           :else                                    ; start / activity / event
           (-> state
