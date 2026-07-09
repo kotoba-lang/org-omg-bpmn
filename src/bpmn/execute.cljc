@@ -88,9 +88,17 @@
           (let [taken (filter #(or (nil? (:bpmn/condition %))
                                    (p/truthy? (:condition ports) (:bpmn/condition %) vars))
                               outs)
-                taken (if (seq taken)
-                        taken
-                        (some->> (:bpmn/default node) (m/flow model) vector))]
+                taken (cond
+                        (seq taken) taken
+                        (:bpmn/default node) (some->> (:bpmn/default node) (m/flow model) vector)
+                        ;; No condition was truthy and there's no default flow --
+                        ;; falling through to an empty `taken` here would silently
+                        ;; annihilate the token (no error, no end event, and `run`
+                        ;; would report the process as completed?). Fall back to
+                        ;; every outgoing flow rather than dropping the token, the
+                        ;; same never-lose-a-token guarantee exclusive-gateway's
+                        ;; own final fallback provides.
+                        :else outs)]
             (-> state
                 (assoc :bpmn/tokens (into others (emit taken)))
                 (log {:bpmn/event :inclusive})))

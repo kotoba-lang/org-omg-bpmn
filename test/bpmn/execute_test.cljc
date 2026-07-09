@@ -63,6 +63,34 @@
       (is (some #(= :parallel-wait (:bpmn/event %)) (:bpmn/trace end)))
       (is (some #(= :parallel-fire (:bpmn/event %)) (:bpmn/trace end))))))
 
+;; --- inclusive gateway: OR-split on truthy conditions ---
+
+(defn inclusive-model []
+  (-> (m/process "Ship")
+      (m/add :start-event "S")
+      (m/add :inclusive-gateway "G")
+      (m/add :end-event "Ea") (m/add :end-event "Eb")
+      (m/connect "S" "G")
+      (m/connect "G" "Ea" {:id "Fa" :condition "${a}"})
+      (m/connect "G" "Eb" {:id "Fb" :condition "${b}"})))
+
+(deftest inclusive-routes-on-each-truthy-condition
+  (testing "only the truthy branch fires"
+    (let [end (e/run (e/default-ports) (inclusive-model) (e/start (inclusive-model) {:a true}))]
+      (is (= ["Ea"] (mapv :bpmn/at (filter #(= :end (:bpmn/event %)) (:bpmn/trace end)))))))
+  (testing "both branches fire when both conditions are truthy"
+    (let [end (e/run (e/default-ports) (inclusive-model) (e/start (inclusive-model) {:a true :b true}))]
+      (is (= #{"Ea" "Eb"} (set (mapv :bpmn/at (filter #(= :end (:bpmn/event %)) (:bpmn/trace end)))))))))
+
+(deftest inclusive-gateway-never-annihilates-the-token
+  ;; With no condition truthy and no :bpmn/default, the gateway must not
+  ;; silently drop the token -- it must still complete via SOME end event,
+  ;; the same never-lose-a-token guarantee exclusive-gateway provides.
+  (let [model (inclusive-model)
+        end   (e/run (e/default-ports) model (e/start model {}))]
+    (is (e/completed? end))
+    (is (seq (filter #(= :end (:bpmn/event %)) (:bpmn/trace end))))))
+
 ;; --- runaway guard ---
 
 (deftest step-limit-guards-loops
