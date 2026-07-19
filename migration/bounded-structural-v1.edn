@@ -1,5 +1,5 @@
 {:migration/id :bpmn/bounded-structural-v1
- :status :candidate
+ :status :qualified
  :source-of-truth {:open-model "src/bpmn/validate.cljc"
                    :bounded-kernel "src/bpmn/bounded_validate.kotoba"}
  :boundary
@@ -21,4 +21,12 @@
  {:cljc-oracle "test/bpmn/bounded_matrix_test.clj"
   :kotoba-conformance "test/bpmn/bounded_conformance.kotoba"
   :web-wasm-verifier "scripts/verify-kotoba-bounded.mjs"
-  :ceiling-case :four-nodes-three-dangling-flows}}
+  :ceiling-case :four-nodes-three-dangling-flows
+  :legacy-suite {:tests 20 :assertions 68 :failures 0 :errors 0}
+  :web-wasm-cases 16
+  :required-capabilities []
+  :pull-request "https://github.com/kotoba-lang/org-omg-bpmn/pull/2"
+  :merge-commit "621d38b60ac14143005632ff8b45ad87fc663771"
+  :hosted-ci {:run "https://github.com/kotoba-lang/org-omg-bpmn/actions/runs/29698874964"
+              :jdk [17 21]
+              :status :passed}}}
