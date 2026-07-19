@@ -13,4 +13,9 @@
   ;; clj-kondo as a Clojars lib (no Homebrew/system install needed).
   :lint {:replace-deps {clj-kondo/clj-kondo {:mvn/version "2024.11.14"}}
          :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test"
-                     "--fail-level" "error"]}}}
+                     "--fail-level" "error"]}
+
+  :kotoba {:replace-deps {io.github.kotoba-lang/compiler
+                          {:git/url "https://github.com/kotoba-lang/compiler.git"
+                           :git/sha "b3a29de4d0e525e6bacd4b66dafc755a2f68536e"}}
+           :main-opts ["-m" "kotoba.compiler.cli"]}}}
