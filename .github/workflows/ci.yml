@@ -45,3 +45,15 @@ jobs:
         run: clojure -M:test
       - name: Lint
         run: clojure -M:lint
+      - name: Compile bounded Kotoba validator
+        run: |
+          mkdir -p target/kotoba
+          clojure -M:kotoba compile test/bpmn/bounded_conformance.kotoba \
+            --source-path src --target js-browser --output target/kotoba/bpmn.mjs
+          clojure -M:kotoba compile test/bpmn/bounded_conformance.kotoba \
+            --source-path src --target wasm32-browser --output target/kotoba/bpmn.wasm
+      - name: Execute bounded Web and Wasm conformance
+        run: |
+          compiler_src="$(clojure -Spath -M:kotoba | tr ':' '\n' | grep '/compiler/' | head -1)"
+          node scripts/verify-kotoba-bounded.mjs target/kotoba/bpmn.mjs \
+            target/kotoba/bpmn.wasm "$(dirname "$compiler_src")/runtime/browser-host.mjs"

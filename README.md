@@ -65,6 +65,16 @@ by flow id, so runs are deterministic):
 Errors: dangling flow refs, unknown node types, id/key mismatch. Warnings: no
 start/end event, unconnected node, indeterminate exclusive gateway.
 
+The safety-critical, closed structural subset is also implemented in
+`bpmn.bounded-validate` as native `.kotoba`. It accepts a canonical integer graph
+with at most four nodes and three flows, rejects malformed/non-canonical input,
+and compiles directly to restricted JavaScript and Wasm without a JVM runtime.
+Open BPMN concerns—string identifiers, the full node taxonomy, XML, messages, and
+execution—remain in the portable `.cljc` model. The shared fixture matrix checks
+that the bounded kernel produces the same error/warning counts as this validator.
+The v1 ceiling is deliberately below the compiler's fixed, non-replenishable
+512-call fuel limit and is exercised at the full 4/3 boundary in both targets.
+
 ## XML I/O (`bpmn.xml`)
 
 ```clojure
