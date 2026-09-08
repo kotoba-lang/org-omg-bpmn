@@ -28,7 +28,7 @@
   A non-gateway node performs its activity then fans a token onto each outgoing flow
   (0 → the token ends, 1 → moves, >1 → uncontrolled parallel split). An end event
   performs then consumes its token."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [bpmn.model :as m]
             [bpmn.ports :as p]))
 

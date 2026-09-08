@@ -16,7 +16,7 @@
      the five predefined entities. It is NOT a general XML parser — no DTD/CDATA/PI,
      and attribute values must escape `>` as `&gt;`. For anything exotic, use layer 1
      with a real parser."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 ;; --- element-name ⇄ keyword type maps ---
 
