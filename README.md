@@ -118,5 +118,5 @@ interpreter stays pure orchestration.
 ## Test
 
 ```
-clojure -M:test
+kbb -M:test
 ```
