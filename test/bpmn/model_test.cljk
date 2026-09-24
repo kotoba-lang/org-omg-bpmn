@@ -1,5 +1,5 @@
 (ns bpmn.model-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [bpmn.model :as m]))
 
 (defn sample []
