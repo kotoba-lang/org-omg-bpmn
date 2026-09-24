@@ -1,5 +1,5 @@
 (ns bpmn.bounded-matrix-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [bpmn.model :as m]
             [bpmn.validate :as v]))
 

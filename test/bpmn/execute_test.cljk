@@ -1,5 +1,5 @@
 (ns bpmn.execute-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [bpmn.model :as m]
             [bpmn.ports :as p]
             [bpmn.execute :as e]))

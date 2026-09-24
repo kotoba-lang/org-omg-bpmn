@@ -1,5 +1,5 @@
 (ns bpmn.xml-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [clojure.java.io :as io]
             [bpmn.model :as m]
             [bpmn.xml :as xml]))
